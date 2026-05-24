@@ -8,8 +8,8 @@ import { useTenantId } from "@/hooks/use-tenant";
 import { listServices, createService, patchService, deleteService } from "@/lib/api/clinic";
 import { formatPrice } from "@/lib/cn";
 import {
-  Card, PageHeader, Button, Field, Input, Textarea, Modal, Badge,
-  Spinner, ErrorState, EmptyState,
+  Card, PageHeader, Button, Field, Input, Textarea, Modal, Switch,
+  Spinner, ErrorState, EmptyState, ConfirmDialog,
 } from "@/components/ui";
 import { NoTenant } from "@/components/layout/NoTenant";
 import type { Service } from "@/types";
@@ -42,12 +42,27 @@ export function ServicesSettings() {
 export function ServicesTable({ tenantId }: { tenantId: string }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Service | "new" | null>(null);
+  const [deactivating, setDeactivating] = useState<Service | null>(null);
   const query = useQuery({ queryKey: ["services", tenantId], queryFn: () => listServices(tenantId) });
 
   const del = useMutation({
     mutationFn: (id: string) => deleteService(tenantId, id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["services", tenantId] }),
   });
+
+  const toggleActive = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      patchService(tenantId, id, { is_active }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services", tenantId] });
+      setDeactivating(null);
+    },
+  });
+
+  function onToggle(s: Service, next: boolean) {
+    if (next) toggleActive.mutate({ id: s.id, is_active: true });
+    else setDeactivating(s);
+  }
 
   return (
     <>
@@ -80,7 +95,17 @@ export function ServicesTable({ tenantId }: { tenantId: string }) {
                   <Td className="text-muted">{s.code}</Td>
                   <Td>{s.duration_minutes} min</Td>
                   <Td>{formatPrice(s.price_amount_cents, s.currency)}</Td>
-                  <Td>{s.is_active ? <Badge tone="success">Active</Badge> : <Badge>Inactive</Badge>}</Td>
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={s.is_active}
+                        disabled={toggleActive.isPending && toggleActive.variables?.id === s.id}
+                        onChange={(next) => onToggle(s, next)}
+                        label={`Toggle ${s.display_name}`}
+                      />
+                      <span className="text-xs text-muted">{s.is_active ? "Active" : "Inactive"}</span>
+                    </div>
+                  </Td>
                   <Td>
                     <div className="flex justify-end gap-1">
                       <IconBtn onClick={() => setEditing(s)} aria-label="Edit"><Pencil className="h-4 w-4" /></IconBtn>
@@ -108,6 +133,23 @@ export function ServicesTable({ tenantId }: { tenantId: string }) {
           onClose={() => setEditing(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deactivating}
+        onClose={() => setDeactivating(null)}
+        onConfirm={() => deactivating && toggleActive.mutate({ id: deactivating.id, is_active: false })}
+        title={`Deactivate "${deactivating?.display_name}"?`}
+        confirmLabel="Deactivate"
+        tone="danger"
+        loading={toggleActive.isPending}
+        message={
+          <>
+            The AI receptionist will stop offering this service for new bookings and chats.
+            Existing appointments are <span className="font-medium text-ink">not affected</span>.
+            You can reactivate it anytime.
+          </>
+        }
+      />
     </>
   );
 }

@@ -86,6 +86,43 @@ export function Card({ className, children }: { className?: string; children: Re
   );
 }
 
+// ── Switch ──────────────────────────────────────────────────────────────────────
+export function Switch({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-brand-cyan" : "bg-line",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+          checked ? "translate-x-4" : "translate-x-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
 // ── Badge ──────────────────────────────────────────────────────────────────────
 export function Badge({
   children,
@@ -167,6 +204,51 @@ export function Modal({
       >
         <h2 className="mb-4 text-lg font-semibold text-ink">{title}</h2>
         {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Confirm dialog ──────────────────────────────────────────────────────────────
+export function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel = "Confirm",
+  tone = "primary",
+  loading,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  tone?: "primary" | "danger";
+  loading?: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-card bg-white p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
+        <div className="mt-2 text-sm text-muted">{message}</div>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="button" variant={tone} loading={loading} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );

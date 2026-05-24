@@ -9,8 +9,8 @@ import {
   listDoctors, createDoctor, patchDoctor, deleteDoctor, getSchedule, putSchedule,
 } from "@/lib/api/clinic";
 import {
-  Card, PageHeader, Button, Field, Input, Modal, Badge,
-  Spinner, ErrorState, EmptyState,
+  Card, PageHeader, Button, Field, Input, Modal, Switch,
+  Spinner, ErrorState, EmptyState, ConfirmDialog,
 } from "@/components/ui";
 import { NoTenant } from "@/components/layout/NoTenant";
 import type { Doctor, ScheduleSlot } from "@/types";
@@ -40,12 +40,27 @@ function DoctorsList({ tenantId }: { tenantId: string }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Doctor | "new" | null>(null);
   const [scheduleFor, setScheduleFor] = useState<Doctor | null>(null);
+  const [deactivating, setDeactivating] = useState<Doctor | null>(null);
   const query = useQuery({ queryKey: ["doctors", tenantId], queryFn: () => listDoctors(tenantId) });
 
   const del = useMutation({
     mutationFn: (id: string) => deleteDoctor(tenantId, id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["doctors", tenantId] }),
   });
+
+  const toggleActive = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      patchDoctor(tenantId, id, { is_active }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["doctors", tenantId] });
+      setDeactivating(null);
+    },
+  });
+
+  function onToggle(d: Doctor, next: boolean) {
+    if (next) toggleActive.mutate({ id: d.id, is_active: true });
+    else setDeactivating(d);
+  }
 
   return (
     <>
@@ -67,8 +82,14 @@ function DoctorsList({ tenantId }: { tenantId: string }) {
                 <div>
                   <p className="font-medium text-ink">{d.display_name}</p>
                   <p className="text-sm text-muted">{d.specialty || "—"}</p>
-                  <div className="mt-2">
-                    {d.is_active ? <Badge tone="success">Active</Badge> : <Badge>Inactive</Badge>}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Switch
+                      checked={d.is_active}
+                      disabled={toggleActive.isPending && toggleActive.variables?.id === d.id}
+                      onChange={(next) => onToggle(d, next)}
+                      label={`Toggle ${d.display_name}`}
+                    />
+                    <span className="text-xs text-muted">{d.is_active ? "Active" : "Inactive"}</span>
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -93,6 +114,24 @@ function DoctorsList({ tenantId }: { tenantId: string }) {
       {scheduleFor && (
         <ScheduleModal tenantId={tenantId} doctor={scheduleFor} onClose={() => setScheduleFor(null)} />
       )}
+
+      <ConfirmDialog
+        open={!!deactivating}
+        onClose={() => setDeactivating(null)}
+        onConfirm={() => deactivating && toggleActive.mutate({ id: deactivating.id, is_active: false })}
+        title={`Deactivate ${deactivating?.display_name}?`}
+        confirmLabel="Deactivate"
+        tone="danger"
+        loading={toggleActive.isPending}
+        message={
+          <>
+            Their <span className="font-medium text-ink">future appointments will be cancelled</span> and
+            removed from Google Calendar. Affected patients are notified on WhatsApp and by email, and
+            can re-book with the AI receptionist. The doctor stops being offered for new bookings.
+            You can reactivate them anytime.
+          </>
+        }
+      />
     </>
   );
 }

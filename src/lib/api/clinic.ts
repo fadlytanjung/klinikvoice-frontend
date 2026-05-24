@@ -52,7 +52,7 @@ export const getCalendarStatus = (tid: string) =>
 export const listCalendars = (tid: string) =>
   get<{ calendars: CalendarItem[] }>(`${t(tid)}/calendar/list`);
 
-// ── Appointments (read-only) ────────────────────────────────────────────────
+// ── Appointments ─────────────────────────────────────────────────────────────
 export const listAppointments = (tid: string, range?: { from?: string; to?: string }) => {
   const qs = new URLSearchParams();
   if (range?.from) qs.set("from", range.from);
@@ -60,6 +60,28 @@ export const listAppointments = (tid: string, range?: { from?: string; to?: stri
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return get<Appointment[]>(`${t(tid)}/appointments${suffix}`);
 };
+
+// Cancel: deletes the calendar event (Google emails the patient) and sends the
+// WhatsApp cancel notice unless notify=false (backend doc 23 §5).
+export const cancelAppointment = (
+  tid: string,
+  id: string,
+  body: { reason?: string; notify?: boolean } = {},
+) => post<Appointment>(`${t(tid)}/appointments/${id}/cancel`, body);
+
+// Reschedule: moves the appointment (duration preserved), updates the calendar
+// event, and sends the WhatsApp reschedule notice unless notify=false.
+export const rescheduleAppointment = (
+  tid: string,
+  id: string,
+  body: { new_slot_start: string; notify?: boolean },
+) => post<Appointment>(`${t(tid)}/appointments/${id}/reschedule`, body);
+
+// Manual status update (confirmed/completed/no_show). No calendar write — these
+// happen after the slot; the past event stays as history (backend doc 23 §9).
+export type ManualStatus = "confirmed" | "completed" | "no_show";
+export const setAppointmentStatus = (tid: string, id: string, status: ManualStatus) =>
+  patch<Appointment>(`${t(tid)}/appointments/${id}/status`, { status });
 
 // ── Patients (read-only) ─────────────────────────────────────────────────────
 export const listPatients = (tid: string, q?: string) =>

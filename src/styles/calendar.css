@@ -1,0 +1,102 @@
+/* Brand-aligned overrides for react-big-calendar.
+   Base styles come from react-big-calendar/lib/css/react-big-calendar.css;
+   this file restyles typography, color, and spacing to match the design system. */
+
+.kv-calendar {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #13212b; /* ink */
+}
+
+/* ── Month/header grid lines ─────────────────────────────────────────────── */
+.kv-calendar .rbc-month-view,
+.kv-calendar .rbc-time-view,
+.kv-calendar .rbc-agenda-view table.rbc-agenda-table {
+  border-color: #e2e8ec; /* line */
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.kv-calendar .rbc-month-row + .rbc-month-row,
+.kv-calendar .rbc-day-bg + .rbc-day-bg,
+.kv-calendar .rbc-header + .rbc-header,
+.kv-calendar .rbc-timeslot-group,
+.kv-calendar .rbc-time-content > * + * > * {
+  border-color: #e2e8ec;
+}
+
+/* ── Weekday header row ───────────────────────────────────────────────────── */
+.kv-calendar .rbc-header {
+  padding: 0.6rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5b6b73; /* muted */
+  background: #f6f9fa; /* canvas */
+  border-bottom: 1px solid #e2e8ec;
+}
+
+/* ── Date cells ───────────────────────────────────────────────────────────── */
+.kv-calendar .rbc-date-cell {
+  padding: 0.35rem 0.5rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #5b6b73;
+}
+.kv-calendar .rbc-off-range-bg {
+  background: #fafcfc;
+}
+.kv-calendar .rbc-today {
+  background: #e7f8fc; /* brand-cyan-50 */
+}
+.kv-calendar .rbc-now .rbc-button-link {
+  color: #0f3d4d; /* brand-navy */
+  font-weight: 700;
+}
+
+/* ── Events ───────────────────────────────────────────────────────────────── */
+.kv-calendar .rbc-event {
+  padding: 0;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  box-shadow: none;
+}
+.kv-calendar .rbc-event.rbc-selected,
+.kv-calendar .rbc-event:focus {
+  outline: 2px solid #1fc2dd; /* brand-cyan */
+  outline-offset: 1px;
+}
+.kv-calendar .rbc-event:hover {
+  filter: brightness(0.97);
+}
+.kv-calendar .rbc-show-more {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #15a6be; /* brand-cyan-600 */
+  background: transparent;
+}
+
+/* ── Time grid (week/day) ─────────────────────────────────────────────────── */
+.kv-calendar .rbc-time-header-content,
+.kv-calendar .rbc-time-content {
+  border-color: #e2e8ec;
+}
+.kv-calendar .rbc-label,
+.kv-calendar .rbc-time-slot {
+  font-size: 0.72rem;
+  color: #5b6b73;
+}
+.kv-calendar .rbc-current-time-indicator {
+  background: #1fc2dd;
+  height: 2px;
+}
+
+/* ── Agenda ───────────────────────────────────────────────────────────────── */
+.kv-calendar .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+}
+.kv-calendar .rbc-agenda-view table.rbc-agenda-table .rbc-agenda-time-cell {
+  color: #5b6b73;
+}
